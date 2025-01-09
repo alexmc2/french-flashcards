@@ -84,7 +84,7 @@ export function AuthForm() {
         return;
       }
 
-      router.push('/flashcards');
+      router.push('/');
       router.refresh();
     } catch (err) {
       if (err instanceof Error) {

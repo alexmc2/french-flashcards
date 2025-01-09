@@ -189,7 +189,7 @@ export async function submitAnswer(
       },
     });
 
-    revalidatePath('/flashcards');
+    revalidatePath('/');
   } catch (error) {
     console.error('Error submitting answer:', error);
     throw error;
@@ -259,5 +259,5 @@ export async function updateUserSettings(
     },
   });
 
-  revalidatePath('/flashcards');
+  revalidatePath('/');
 }

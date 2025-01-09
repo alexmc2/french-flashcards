@@ -52,7 +52,7 @@ export default async function SettingsPage() {
         <div className='flex justify-between items-center mb-8'>
           <h1 className='text-3xl font-bold'>Settings</h1>
           <Link
-            href='/flashcards'
+            href='/'
             className='px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90'
           >
             Back to Flashcards
