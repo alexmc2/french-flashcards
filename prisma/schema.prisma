@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+model User {
+  id           String         @id @default(uuid())
+  email        String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  settings     UserSettings?
+  progress     Progress[]
+  sessions     Session[]
+}
+
+model UserSettings {
+  id                 String   @id @default(uuid())
+  userId            String   @unique
+  targetWords       Int      @default(5000)
+  useFrequencyOrder Boolean  @default(true)
+  dailyGoal         Int      @default(50)
+  requiredCorrectAnswers Int  @default(3)
+  showExamples      Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id])
+}
+
+model Word {
+  id                  String      @id @default(uuid())
+  frenchWord         String     @unique
+  englishTranslations String[]
+  distractors        Json?      @default("[]")
+  partOfSpeech       String
+  frequencyRank      Int
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  examples           Example[]
+  progress           Progress[]
+}
+
+model Example {
+  id                 String   @id @default(uuid())
+  wordId            String
+  frenchSentence    String
+  englishTranslation String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  word              Word     @relation(fields: [wordId], references: [id])
+}
+
+model Progress {
+  id           String    @id @default(uuid())
+  userId      String
+  wordId      String
+  timesCorrect Int      @default(0)
+  timesWrong   Int      @default(0)
+  lastSeen     DateTime?
+  nextReview   DateTime?
+  masteryLevel Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+  word         Word     @relation(fields: [wordId], references: [id])
+
+  @@unique([userId, wordId])
+  @@index([nextReview])
+}
+
+model Session {
+  id           String    @id @default(uuid())
+  userId      String
+  startedAt    DateTime @default(now())
+  endedAt      DateTime?
+  wordsStudied Int      @default(0)
+  correctCount Int      @default(0)
+  wrongCount   Int      @default(0)
+  user         User     @relation(fields: [userId], references: [id])
+}

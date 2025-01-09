@@ -1,0 +1,22 @@
+{
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "next/core-web-vitals",
+    "prettier"
+  ],
+  "plugins": ["@typescript-eslint", "prettier"],
+  "rules": {
+    "prettier/prettier": "error",
+    "react/self-closing-comp": "error",
+    "react/jsx-curly-brace-presence": [
+      "error",
+      { "props": "never", "children": "never", "propElementValues": "always" }
+    ],
+    "@typescript-eslint/no-explicit-any": "off",
+    "react/no-unescaped-entities": "off",
+    "react-hooks/exhaustive-deps": "off",
+    "quotes": ["off", "single"],
+    "jsx-quotes": ["off", "prefer-single"],
+    "@typescript-eslint/quotes": ["off", "single"]
+  }
+}
