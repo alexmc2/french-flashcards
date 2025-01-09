@@ -246,7 +246,14 @@ const nextConfig = {
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "word-parser.js", "words.js"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "word-parser.js",
+    "words.js"
+  ],
   "exclude": ["node_modules"]
 }
 ```
@@ -270,3 +277,182 @@ const nextConfig = {
 - Use React Testing Library
 
 Remember: Prioritize clarity and maintainability while delivering robust, accessible, and performant solutions aligned with the latest React 19, Next.js 15, and Vercel AI SDK features and best practices.
+
+Nextjs 15 — Actions Best Practice
+
+Best Practices for Next.js 15 Server Actions: Embracing Separation of Concerns
+Next.js 13 introduced Server Actions, a feature that continues to evolve and mature in Next.js 15. These actions revolutionize the way we build React applications by enabling server-side logic directly within the framework. At their core, Server Actions promote separation of concerns — a design principle that ensures cleaner, more maintainable, and scalable codebases.
+
+In this article, we will:
+
+Explore why separation of concerns is crucial for modern React applications.
+Understand how Server Actions function as a bridge between components and server-side operations.
+Discuss best practices for designing and using Server Actions in Next.js 15.
+The Need for Separation of Concerns in Next.js Applications
+Separation of concerns is a principle that divides an application into distinct sections, each handling a specific responsibility. In the context of React and Next.js:
+
+Components should focus on rendering UI and managing user interactions.
+Actions (or server-side logic) should handle data-fetching, mutations, and communication with APIs or databases.
+APIs or backend services should manage direct interactions with databases or external services.
+Historically, developers often mixed data-fetching logic with component rendering, leading to bloated components and a tangled codebase. The introduction of Server Actions in Next.js 13+ changes the paradigm by isolating server-side responsibilities into dedicated functions, leaving components to focus solely on their UI logic.
+
+How Server Actions Work as “Separators”
+Server Actions act as a middle layer between:
+
+Database/API Calls: Actions interact with APIs or databases (previously handled exclusively in the api directory).
+Component Logic: Components simply call actions and render data, staying agnostic of where or how the data is retrieved.
+This separation ensures:
+
+Cleaner component code.
+Reusable server-side logic.
+Centralized error handling and data transformation.
+A Comparison: Without and With Server Actions
+Legacy Approach: Mixed Concerns
+Traditionally, components often contained data-fetching logic directly, leading to convoluted code:
+
+// Component with mixed concerns
+export default async function PostsPage() {
+const response = await fetch('/api/posts');
+const data = await response.json();
+if (data.error) {
+return <div>Error loading posts</div>;
+}
+return (
+
+<ul>
+{data.posts.map(post => (
+<li key={post.id}>{post.title}</li>
+))}
+</ul>
+);
+}
+Here, the component:
+
+Fetches data.
+Handles errors.
+Renders the UI.
+Mixing these responsibilities makes the code harder to test and maintain.
+
+Modern Approach: Using Server Actions
+With Server Actions, the component is simplified, as it only renders data:
+
+// actions/posts.js
+export async function fetchPosts() {
+const response = await fetch('/api/posts');
+if (!response.ok) throw new Error('Failed to fetch posts');
+return response.json();
+}
+// Component focused on rendering
+import { fetchPosts } from '@/actions/posts';
+export default async function PostsPage() {
+const { posts } = await fetchPosts();
+return (
+
+<ul>
+{posts.map(post => (
+<li key={post.id}>{post.title}</li>
+))}
+</ul>
+);
+}
+In this example:
+
+The action, fetchPosts, encapsulates data-fetching and error handling.
+The component is focused solely on rendering, improving readability and maintainability.
+Best Practices for Server Actions in Next.js 15
+
+1. Separate Logic from Presentation
+   Server Actions should handle data logic, while components should focus on rendering. Avoid embedding HTML or JSX inside actions.
+
+Bad Practice:
+
+export async function fetchPosts() {
+const response = await fetch('/api/posts');
+const data = await response.json();
+return (
+
+<ul>
+{data.posts.map(post => (
+<li key={post.id}>{post.title}</li>
+))}
+</ul>
+);
+}
+Good Practice:
+
+export async function fetchPosts() {
+const response = await fetch('/api/posts');
+if (!response.ok) throw new Error('Failed to fetch posts');
+return response.json();
+}
+Keep actions focused on managing data, not UI.
+
+   Centralize API Calls in Actions
+   Move all data-fetching logic to Server Actions, even if it means duplicating simple calls for reuse. This creates a single source of truth for data operations.
+
+export async function fetchUser(userId) {
+const response = await fetch(`/api/users/${userId}`);
+if (!response.ok) throw new Error('Failed to fetch user');
+return response.json();
+} 3. Organize Actions by Feature
+Group related actions into files or directories to keep them logically organized.
+
+Example Structure:
+
+/actions
+posts.js // Actions related to posts
+users.js // Actions related to users
+/api
+posts.js // Backend API routes
+users.js // Backend API routes
+This makes actions easier to locate and maintain.
+
+1. Handle Errors Gracefully in Actions
+   Actions should encapsulate error handling and provide clear feedback to the component.
+
+export async function fetchPosts() {
+try {
+const response = await fetch('/api/posts');
+if (!response.ok) throw new Error('Failed to fetch posts');
+return response.json();
+} catch (error) {
+console.error('Error fetching posts:', error.message);
+throw error;
+}
+}
+The component can handle errors without worrying about low-level details.
+   Reuse Actions Across Components
+   Actions can be used in multiple components, reducing duplication and improving maintainability.
+
+import { fetchUser } from '@/actions/users';
+export async function UserProfile({ userId }) {
+const user = await fetchUser(userId);
+return <h1>{user.name}</h1>;
+}
+export async function UserPosts({ userId }) {
+const user = await fetchUser(userId);
+return <p>Posts by {user.name}</p>;
+} 6. Use async/await for Server Components
+Since Server Components support async/await, calling actions directly is clean and intuitive.
+
+import { fetchPosts } from '@/actions/posts';
+export default async function PostsPage() {
+const { posts } = await fetchPosts();
+return (
+
+<ul>
+{posts.map(post => (
+<li key={post.id}>{post.title}</li>
+))}
+</ul>
+);
+}
+Conclusion
+Server Actions in Next.js 15 exemplify the power of separation of concerns, making it easier to build scalable, maintainable, and testable applications. By isolating server-side logic into dedicated actions, you can:
+
+Simplify components by removing data-fetching logic.
+Centralize error handling and data management.
+Create reusable and modular server-side functions.
+By adhering to best practices, such as avoiding UI logic in actions, organizing actions by feature, and handling errors gracefully, you can fully leverage Server Actions to create clean and efficient codebases.
+
+Nextjs 15

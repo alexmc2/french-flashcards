@@ -2,27 +2,38 @@
 
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-export async function getNextWord(userId: string) {
-  try {
-    // Get or create user settings
-    let userSettings = await prisma.userSettings.findUnique({
-      where: { userId },
-    });
 
-    if (!userSettings) {
-      // Create default settings if they don't exist
-      userSettings = await prisma.userSettings.create({
-        data: {
-          userId,
-          targetWords: 5000,
-          useFrequencyOrder: true,
-          dailyGoal: 50,
-          requiredCorrectAnswers: 3,
+const DEFAULT_SETTINGS = {
+  targetWords: 5000,
+  useFrequencyOrder: true,
+  dailyGoal: 50,
+  requiredCorrectAnswers: 3,
+};
+
+export async function getNextWord(userId?: string) {
+  try {
+    // For anonymous users or if settings don't exist, use default settings
+    const settings = userId
+      ? await prisma.userSettings.findUnique({
+          where: { userId },
+        })
+      : null;
+
+    const userSettings = settings || DEFAULT_SETTINGS;
+
+    // For anonymous users, just get a random word
+    if (!userId) {
+      return prisma.word.findFirst({
+        include: {
+          examples: true,
         },
+        orderBy: userSettings.useFrequencyOrder
+          ? { frequencyRank: 'asc' }
+          : { frequencyRank: 'desc' },
       });
     }
 
-    // First try to get a random word the user hasn't seen yet
+    // For logged-in users, get a word they haven't seen or need to review
     let word = await prisma.word.findFirst({
       where: {
         NOT: {
@@ -84,6 +95,7 @@ export async function getNextWord(userId: string) {
     return null;
   }
 }
+
 export async function getRandomOptions(
   correctWord: string,
   count: number = 3
@@ -128,6 +140,9 @@ export async function submitAnswer(
   wordId: string,
   isCorrect: boolean
 ) {
+  // Skip progress tracking for anonymous users
+  if (!userId) return;
+
   try {
     const userSettings = await prisma.userSettings.findUnique({
       where: { userId },
@@ -150,7 +165,11 @@ export async function submitAnswer(
         timesCorrect: isCorrect ? 1 : 0,
         timesWrong: isCorrect ? 0 : 1,
         lastSeen: new Date(),
-        nextReview: calculateNextReview(0, isCorrect, 3),
+        nextReview: calculateNextReview(
+          0,
+          isCorrect,
+          userSettings.requiredCorrectAnswers
+        ),
         masteryLevel: isCorrect ? 1 : 0,
       },
       update: {
@@ -158,7 +177,11 @@ export async function submitAnswer(
         timesWrong: { increment: isCorrect ? 0 : 1 },
         lastSeen: new Date(),
         nextReview: {
-          set: calculateNextReview(0, isCorrect, 3),
+          set: calculateNextReview(
+            0,
+            isCorrect,
+            userSettings.requiredCorrectAnswers
+          ),
         },
         masteryLevel: {
           increment: isCorrect ? 1 : -1,

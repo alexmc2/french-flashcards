@@ -8,9 +8,11 @@ import {
 } from '@/actions/word-server-actions';
 import { Flashcard } from './card';
 import type { Word } from '@/types/flashcards';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 interface FlashcardGameProps {
-  userId: string;
+  userId?: string;
 }
 
 export function FlashcardGame({ userId }: FlashcardGameProps) {
@@ -18,6 +20,7 @@ export function FlashcardGame({ userId }: FlashcardGameProps) {
   const [options, setOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const loadNextWord = useCallback(async () => {
     setLoading(true);
@@ -57,6 +60,10 @@ export function FlashcardGame({ userId }: FlashcardGameProps) {
 
   const handleAnswer = async (isCorrect: boolean) => {
     if (currentWord) {
+      if (!userId) {
+        setShowLoginPrompt(true);
+        return;
+      }
       try {
         await submitAnswer(userId, currentWord.id, isCorrect);
       } catch (error) {
@@ -96,12 +103,38 @@ export function FlashcardGame({ userId }: FlashcardGameProps) {
           </button>
         </div>
       ) : (
-        <Flashcard
-          word={currentWord}
-          options={options}
-          onAnswer={handleAnswer}
-          onNext={loadNextWord}
-        />
+        <>
+          <Flashcard
+            word={currentWord}
+            options={options}
+            onAnswer={handleAnswer}
+            onNext={loadNextWord}
+          />
+          {showLoginPrompt && (
+            <div className='fixed inset-0 bg-black/50 flex items-center justify-center p-4'>
+              <div className='bg-background rounded-lg p-6 max-w-md w-full'>
+                <h3 className='text-lg font-semibold mb-2'>
+                  Save Your Progress
+                </h3>
+                <p className='text-muted-foreground mb-4'>
+                  Sign in to save your progress and track your learning journey.
+                  Your progress will be lost when you close the browser.
+                </p>
+                <div className='flex justify-end gap-2'>
+                  <Button
+                    variant='outline'
+                    onClick={() => setShowLoginPrompt(false)}
+                  >
+                    Continue Anonymously
+                  </Button>
+                  <Link href='/auth'>
+                    <Button>Sign In</Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

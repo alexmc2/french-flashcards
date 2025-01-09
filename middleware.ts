@@ -54,7 +54,19 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Protected routes that require authentication
+  const protectedRoutes = ['/settings'];
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    request.nextUrl.pathname.startsWith(route)
+  );
+
+  if (isProtectedRoute && !user) {
+    return NextResponse.redirect(new URL('/auth', request.url));
+  }
 
   return response;
 }
